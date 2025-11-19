@@ -1,0 +1,55 @@
+{
+  "sistema": {
+    "nombre": "SADTF",
+    "version": "1.0.0",
+    "descripcion": "Sistema de Archivos Distribuido Tolerante a Fallas"
+  },
+  "almacenamiento": {
+    "tamaño_bloque_mb": 1,
+    "tamaño_espacio_compartido_mb": 70,
+    "directorio_bloques": "espacioCompartido",
+    "directorio_metadata": "metadata",
+    "directorio_logs": "logs"
+  },
+  "red": {
+    "puerto_coordinador": 5000,
+    "puerto_nodo": 5001,
+    "timeout_segundos": 5,
+    "intervalo_heartbeat_segundos": 3
+  },
+  "nodos": [
+    {
+      "id": 1,
+      "nombre": "servidor-ubuntu",
+      "ip": "192.168.1.100",
+      "puerto": 5001,
+      "capacidad_mb": 70,
+      "activo": true,
+      "es_coordinador": true
+    },
+    {
+      "id": 2,
+      "nombre": "wsl-local",
+      "ip": "localhost",
+      "puerto": 5002,
+      "capacidad_mb": 70,
+      "activo": true,
+      "es_coordinador": false
+    }
+  ],
+  "replicacion": {
+    "numero_replicas": 1,
+    "estrategia": "distribuida"
+  },
+  "seguridad": {
+    "verificar_integridad": true,
+    "algoritmo_hash": "sha256"
+  },
+  "gui": {
+    "titulo": "SADTF",
+    "ancho": 900,
+    "alto": 500,
+    "color_header": "#1B5E7E",
+    "actualizar_cada_segundos": 2
+  }
+}

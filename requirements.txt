@@ -1,0 +1,17 @@
+# Dependencias del Sistema de Archivos Distribuido (SADTF)
+
+# NO se requieren dependencias externas para la versión básica
+# Python 3.8+ incluye todas las bibliotecas necesarias:
+# - tkinter: Interfaz gráfica (viene con Python)
+# - socket: Comunicación de red (biblioteca estándar)
+# - json: Manejo de datos (biblioteca estándar)
+# - threading: Concurrencia (biblioteca estándar)
+# - hashlib: Hashing y verificación (biblioteca estándar)
+# - os, pathlib: Manejo de archivos (biblioteca estándar)
+# - datetime: Manejo de fechas (biblioteca estándar)
+# - logging: Sistema de logs (biblioteca estándar)
+
+# Opcional para desarrollo y pruebas:
+# pytest>=7.0.0  # Para ejecutar tests
+# black>=22.0.0  # Para formateo de código
+# flake8>=4.0.0  # Para verificación de estilo

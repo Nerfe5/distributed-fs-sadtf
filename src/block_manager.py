@@ -325,6 +325,20 @@ class BlockManager:
         else:
             raise ValueError(f"Algoritmo de hash no soportado: {algorithm}")
     
+    def calculate_hash(self, file_path: str, algorithm: str = "sha256") -> str:
+        """
+        Calcula el hash de un archivo completo.
+        Alias de calculate_file_hash para compatibilidad con file_operations.
+        
+        Args:
+            file_path: Ruta del archivo
+            algorithm: Algoritmo de hash
+            
+        Returns:
+            Hash del archivo completo
+        """
+        return self.calculate_file_hash(file_path, algorithm)
+    
     def calculate_file_hash(self, file_path: str, algorithm: str = "sha256") -> str:
         """
         Calcula el hash de un archivo completo.

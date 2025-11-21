@@ -201,25 +201,43 @@ class MetadataManager:
     def allocate_block(
         self,
         block_id: int,
-        archivo: str,
-        parte: int,
-        nodo_primario: int,
-        nodo_replica: int,
-        tamaño_bytes: int,
-        hash: str
+        file_name: str = None,
+        block_index: int = None,
+        primary_node: int = None,
+        replica_node: int = None,
+        size_bytes: int = None,
+        block_hash: str = None,
+        # Aliases para compatibilidad
+        archivo: str = None,
+        parte: int = None,
+        nodo_primario: int = None,
+        nodo_replica: int = None,
+        tamaño_bytes: int = None,
+        hash: str = None
     ) -> None:
         """
         Asigna un bloque a un archivo.
         
+        Acepta tanto nombres en inglés (file_name, block_index, etc.) como
+        en español (archivo, parte, etc.) para compatibilidad.
+        
         Args:
             block_id: ID del bloque a asignar
-            archivo: Nombre del archivo
-            parte: Índice de la parte dentro del archivo
-            nodo_primario: ID del nodo primario
-            nodo_replica: ID del nodo réplica
-            tamaño_bytes: Tamaño del bloque
-            hash: Hash del bloque
+            file_name/archivo: Nombre del archivo
+            block_index/parte: Índice de la parte dentro del archivo
+            primary_node/nodo_primario: ID del nodo primario
+            replica_node/nodo_replica: ID del nodo réplica
+            size_bytes/tamaño_bytes: Tamaño del bloque
+            block_hash/hash: Hash del bloque
         """
+        # Resolver aliases
+        file_name = file_name or archivo
+        block_index = block_index if block_index is not None else parte
+        primary_node = primary_node or nodo_primario
+        replica_node = replica_node or nodo_replica
+        size_bytes = size_bytes or tamaño_bytes
+        block_hash = block_hash or hash
+        
         with self.lock:
             if block_id not in self.block_table:
                 raise ValueError(f"Bloque {block_id} no existe")
@@ -230,12 +248,12 @@ class MetadataManager:
             self.block_table[block_id] = BlockEntry(
                 block_id=block_id,
                 estado='ocupado',
-                archivo=archivo,
-                parte=parte,
-                nodo_primario=nodo_primario,
-                nodo_replica=nodo_replica,
-                tamaño_bytes=tamaño_bytes,
-                hash=hash,
+                archivo=file_name,
+                parte=block_index,
+                nodo_primario=primary_node,
+                nodo_replica=replica_node,
+                tamaño_bytes=size_bytes,
+                hash=block_hash,
                 fecha_creacion=datetime.now().isoformat()
             )
             
@@ -280,32 +298,46 @@ class MetadataManager:
     
     def register_file(
         self,
-        nombre: str,
-        tamaño_total: int,
-        num_bloques: int,
-        bloques: List[int],
-        hash_completo: str
+        file_name: str = None,
+        total_size: int = None,
+        block_ids: List[int] = None,
+        file_hash: str = None,
+        # Aliases en español
+        nombre: str = None,
+        tamaño_total: int = None,
+        num_bloques: int = None,
+        bloques: List[int] = None,
+        hash_completo: str = None
     ) -> None:
         """
         Registra un nuevo archivo en el sistema.
         
+        Acepta tanto parámetros en inglés como en español para compatibilidad.
+        
         Args:
-            nombre: Nombre del archivo
-            tamaño_total: Tamaño total en bytes
-            num_bloques: Número de bloques
-            bloques: Lista de IDs de bloques
-            hash_completo: Hash del archivo completo
+            file_name/nombre: Nombre del archivo
+            total_size/tamaño_total: Tamaño total en bytes
+            block_ids/bloques: Lista de IDs de bloques
+            file_hash/hash_completo: Hash del archivo completo
+            num_bloques: Número de bloques (se calcula si no se proporciona)
         """
+        # Resolver aliases
+        file_name = file_name or nombre
+        total_size = total_size or tamaño_total
+        block_ids = block_ids or bloques
+        file_hash = file_hash or hash_completo
+        num_bloques = num_bloques or (len(block_ids) if block_ids else 0)
+        
         with self.lock:
-            if nombre in self.file_index:
-                raise ValueError(f"El archivo '{nombre}' ya existe")
+            if file_name in self.file_index:
+                raise ValueError(f"El archivo '{file_name}' ya existe")
             
-            self.file_index[nombre] = FileMetadata(
-                nombre=nombre,
-                tamaño_total=tamaño_total,
+            self.file_index[file_name] = FileMetadata(
+                nombre=file_name,
+                tamaño_total=total_size,
                 num_bloques=num_bloques,
-                bloques=bloques,
-                hash_completo=hash_completo,
+                bloques=block_ids,
+                hash_completo=file_hash,
                 fecha_subida=datetime.now().isoformat()
             )
             
@@ -373,6 +405,40 @@ class MetadataManager:
         """Verifica si un archivo existe."""
         with self.lock:
             return nombre in self.file_index
+    
+    def list_all_files(self) -> List[str]:
+        """
+        Lista los nombres de todos los archivos en el sistema.
+        
+        Returns:
+            Lista de nombres de archivos
+        """
+        with self.lock:
+            return list(self.file_index.keys())
+    
+    def get_file_metadata(self, nombre: str) -> FileMetadata:
+        """
+        Obtiene metadatos de un archivo (alias de get_file_info).
+        
+        Args:
+            nombre: Nombre del archivo
+            
+        Returns:
+            FileMetadata con la información del archivo
+        """
+        return self.get_file_info(nombre)
+    
+    def get_block_entry(self, block_id: int) -> BlockEntry:
+        """
+        Obtiene una entrada de bloque (alias de get_block_info).
+        
+        Args:
+            block_id: ID del bloque
+            
+        Returns:
+            BlockEntry con la información del bloque
+        """
+        return self.get_block_info(block_id)
     
     # ========================================================================
     # Estadísticas y utilidades

@@ -20,9 +20,9 @@ import logging
 from pathlib import Path
 from typing import Optional, Dict
 
-from config_manager import get_config
-from block_manager import BlockManager
-from network import NetworkManager, NetworkMessage
+from src.config_manager import get_config
+from src.block_manager import BlockManager
+from src.network import NetworkManager, NetworkMessage
 
 
 class Node:

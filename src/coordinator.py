@@ -21,9 +21,9 @@ import logging
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 
-from config_manager import get_config
-from metadata_manager import MetadataManager
-from network import NetworkManager, NetworkMessage
+from src.config_manager import get_config
+from src.metadata_manager import MetadataManager
+from src.network import NetworkManager, NetworkMessage
 
 
 class NodeStatus:

@@ -22,7 +22,7 @@
       "id": 1,
       "nombre": "servidor-ubuntu",
       "ip": "192.168.0.151",
-      "puerto": 5001,
+      "puerto": 6001,
       "capacidad_mb": 70,
       "activo": true,
       "es_coordinador": true
@@ -31,7 +31,7 @@
       "id": 2,
       "nombre": "wsl-local",
       "ip": "172.19.127.188",
-      "puerto": 5002,
+      "puerto": 6002,
       "capacidad_mb": 70,
       "activo": true,
       "es_coordinador": false

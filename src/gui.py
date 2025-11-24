@@ -18,7 +18,7 @@ from typing import Optional, List
 from datetime import datetime
 import threading
 
-from file_operations import FileOperations, FileOperationResult
+from src.file_operations import FileOperations, FileOperationResult
 
 
 class SADTFGUI:

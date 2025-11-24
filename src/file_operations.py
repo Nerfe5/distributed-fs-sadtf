@@ -199,6 +199,7 @@ class FileOperations:
                     block_id,
                     block_data,
                     block_hash,
+                    file_name,
                     primary_config['ip'],
                     primary_config['puerto']
                 )
@@ -208,6 +209,7 @@ class FileOperations:
                     block_id,
                     block_data,
                     block_hash,
+                    file_name,
                     replica_config['ip'],
                     replica_config['puerto']
                 )
@@ -269,6 +271,7 @@ class FileOperations:
         block_id: int,
         block_data: bytes,
         block_hash: str,
+        file_name: str,
         node_ip: str,
         node_port: int
     ) -> bool:
@@ -279,6 +282,7 @@ class FileOperations:
             block_id: ID del bloque
             block_data: Datos del bloque
             block_hash: Hash del bloque
+            file_name: Nombre del archivo al que pertenece el bloque
             node_ip: IP del nodo
             node_port: Puerto del nodo
             
@@ -290,6 +294,7 @@ class FileOperations:
                 NetworkMessage.UPLOAD_BLOCK,
                 {
                     'block_id': block_id,
+                    'file_name': file_name,
                     'data': block_data.hex(),  # Convertir a hex para JSON
                     'hash': block_hash,
                     'size': len(block_data)

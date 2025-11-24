@@ -16,16 +16,23 @@ Has construido un sistema de archivos distribuido completamente funcional con:
 
 ### 1️⃣ Iniciar como COORDINADOR (Servidor principal)
 
+**Con interfaz gráfica:**
 ```bash
 cd ~/distributed-fs
 python3 main.py --coordinador
 ```
 
+**Sin interfaz gráfica (modo headless/servidor):**
+```bash
+cd ~/distributed-fs
+python3 main.py --coordinador --headless
+```
+
 Esto iniciará:
-- El coordinador maestro en el puerto 5001
+- El coordinador maestro en el puerto 6001
 - Sistema de heartbeat para detectar nodos
 - Servidor de red para comunicación
-- Interfaz gráfica con 4 botones
+- Interfaz gráfica (solo si NO usas --headless)
 
 ### 2️⃣ Iniciar como NODO trabajador (En otra máquina)
 
@@ -133,8 +140,11 @@ distributed-fs/
 #### En el Servidor Ubuntu (192.168.0.151):
 ```bash
 cd ~/distributed-fs
+# Si el servidor tiene GUI:
 python3 main.py --coordinador
-# Se abre la GUI
+
+# Si es servidor sin GUI (headless):
+python3 main.py --coordinador --headless
 ```
 
 #### En WSL o segunda computadora (172.19.127.188):

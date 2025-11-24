@@ -5,8 +5,11 @@ main.py
 Punto de entrada principal del Sistema de Archivos Distribuido (SADTF).
 
 Uso:
-    # Iniciar como coordinador
+    # Iniciar como coordinador con GUI
     python3 main.py --coordinador
+    
+    # Iniciar como coordinador sin GUI (headless/servidor)
+    python3 main.py --coordinador --headless
     
     # Iniciar como nodo específico
     python3 main.py --nodo --id 2
@@ -47,10 +50,15 @@ def setup_logging(log_level=logging.INFO):
     )
 
 
-def start_coordinador():
-    """Inicia el sistema como coordinador."""
+def start_coordinador(headless=False):
+    """Inicia el sistema como coordinador.
+    
+    Args:
+        headless: Si True, ejecuta sin interfaz gráfica (modo servidor)
+    """
+    mode = "HEADLESS" if headless else "CON GUI"
     print("\n" + "="*70)
-    print("  🎯 INICIANDO COMO COORDINADOR")
+    print(f"  🎯 INICIANDO COMO COORDINADOR ({mode})")
     print("="*70 + "\n")
     
     config = get_config()
@@ -77,15 +85,6 @@ def start_coordinador():
             print("❌ Error al iniciar coordinador")
             return False
         
-        # Iniciar GUI
-        print("\n🖥️  Iniciando interfaz gráfica...\n")
-        
-        # Callback para obtener nodos activos del coordinador
-        def get_active_nodes():
-            return [n.node_id for n in coordinator.nodes.values() if n.activo]
-        
-        gui = SADTFGUI(node_id, get_active_nodes)
-        
         # Manejar señales para cierre limpio
         def signal_handler(sig, frame):
             print("\n\n🛑 Señal de interrupción recibida...")
@@ -95,11 +94,34 @@ def start_coordinador():
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
         
-        # Ejecutar GUI (blocking)
-        gui.run()
-        
-        # Cuando se cierra la GUI, detener coordinador
-        coordinator.stop()
+        if headless:
+            # Modo headless: solo servidor sin GUI
+            print("\n⚙️  Coordinador ejecutándose en modo headless...")
+            print("   Presiona Ctrl+C para detener\n")
+            
+            try:
+                # Mantener el coordinador corriendo
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                pass
+            finally:
+                coordinator.stop()
+        else:
+            # Modo normal: con GUI
+            print("\n🖥️  Iniciando interfaz gráfica...\n")
+            
+            # Callback para obtener nodos activos del coordinador
+            def get_active_nodes():
+                return [n.node_id for n in coordinator.nodes.values() if n.activo]
+            
+            gui = SADTFGUI(node_id, get_active_nodes)
+            
+            # Ejecutar GUI (blocking)
+            gui.run()
+            
+            # Cuando se cierra la GUI, detener coordinador
+            coordinator.stop()
         
         return True
         
@@ -201,8 +223,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplos:
-  # Iniciar como coordinador
+  # Iniciar como coordinador con GUI
   python3 main.py --coordinador
+  
+  # Iniciar como coordinador sin GUI (headless)
+  python3 main.py --coordinador --headless
   
   # Iniciar como nodo trabajador
   python3 main.py --nodo --id 2
@@ -216,6 +241,12 @@ Ejemplos:
         '--coordinador',
         action='store_true',
         help='Iniciar como coordinador maestro'
+    )
+    
+    parser.add_argument(
+        '--headless',
+        action='store_true',
+        help='Ejecutar sin interfaz gráfica (solo para coordinador)'
     )
     
     parser.add_argument(
@@ -273,8 +304,10 @@ Ejemplos:
     if args.gui:
         success = start_gui_only(args.id if args.id else 1)
     elif args.coordinador:
-        success = start_coordinador()
+        success = start_coordinador(headless=args.headless)
     elif args.nodo:
+        if args.headless:
+            print("⚠️  ADVERTENCIA: --headless solo aplica al coordinador, se ignorará para nodos")
         success = start_nodo(args.id)
     
     return 0 if success else 1

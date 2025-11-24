@@ -1,18 +1,94 @@
-# SADTF - Sistema de Archivos Distribuido Tolerante a Fallas
+# 🗂️ SADTF - Sistema de Archivos Distribuido Tolerante a Fallas
 
-## 📋 Descripción
+> **Sistema de archivos distribuido simple y funcional para compartir almacenamiento entre múltiples computadoras**
 
-SADTF es un sistema de archivos distribuido que permite almacenar y gestionar archivos grandes aprovechando la capacidad de disco de múltiples computadoras conectadas en red. El sistema divide los archivos en bloques de 1 MB y los distribuye entre los nodos, manteniendo réplicas para tolerancia a fallos.
+[![Versión](https://img.shields.io/badge/versión-1.0.0-blue.svg)](https://github.com/Nerfe5/distributed-fs-sadtf)
+[![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
+[![Licencia](https://img.shields.io/badge/licencia-Educativo-orange.svg)](LICENSE)
 
-### Características Principales
+## 📋 ¿Qué es SADTF?
 
-✅ **Distribución de archivos**: Divide archivos grandes en bloques de 1 MB  
-✅ **Tolerancia a fallas**: Cada bloque tiene una réplica en otro nodo  
-✅ **Interfaz gráfica**: GUI intuitiva con tkinter  
-✅ **Multiplataforma**: Compatible con Linux y Windows  
-✅ **Sin dependencias externas**: Solo usa bibliotecas estándar de Python  
-✅ **Tabla de bloques**: Sistema de paginación para gestionar bloques  
-✅ **Sincronización**: Vista consistente en todos los nodos  
+SADTF es un sistema que te permite **convertir varias computadoras en un solo sistema de almacenamiento compartido**. Imagina que tienes 3 computadoras con 70 MB de espacio libre cada una: SADTF las une para darte 210 MB de almacenamiento distribuido.
+
+### 🎯 ¿Para qué sirve?
+
+- **Compartir archivos grandes** entre varias computadoras sin servidor central costoso
+- **Tolerancia a fallas**: Si una computadora se apaga, tus archivos siguen disponibles
+- **Aprovechar espacio no usado** en computadoras de laboratorio, oficina o hogar
+- **Aprender** sobre sistemas distribuidos de manera práctica
+
+### ✨ Características
+
+✅ **Fácil de usar**: Interfaz gráfica simple con 4 botones  
+✅ **Distribución automática**: Divide archivos en bloques de 1 MB  
+✅ **Réplicas automáticas**: Cada bloque se guarda en 2 lugares diferentes  
+✅ **Modo GUI o headless**: Con o sin interfaz gráfica  
+✅ **Sin dependencias**: Solo Python 3.8+ y tkinter  
+✅ **100% Python**: Código limpio y educativo
+
+## 🚀 Inicio Rápido (5 minutos)
+
+### 1️⃣ Clonar el repositorio
+
+```bash
+cd ~
+git clone https://github.com/Nerfe5/distributed-fs-sadtf.git distributed-fs
+cd distributed-fs
+```
+
+### 2️⃣ Configurar tus nodos
+
+Edita `config/config.json` y cambia las IPs a las de tus computadoras:
+
+```json
+{
+  "nodos": [
+    {
+      "id": 1,
+      "nombre": "mi-servidor",
+      "ip": "192.168.1.100",     ← Cambia esto
+      "puerto": 6001,
+      "capacidad_mb": 70,
+      "es_coordinador": true      ← Solo un nodo debe ser coordinador
+    },
+    {
+      "id": 2,
+      "nombre": "mi-laptop",
+      "ip": "192.168.1.101",     ← Cambia esto
+      "puerto": 6002,
+      "capacidad_mb": 70,
+      "es_coordinador": false
+    }
+  ]
+}
+```
+
+**¿Cómo saber mi IP?** Ejecuta en cada computadora:
+```bash
+hostname -I
+```
+
+### 3️⃣ Iniciar el sistema
+
+**En el coordinador (primera computadora):**
+```bash
+python3 main.py --coordinador --gui
+```
+
+**En los nodos trabajadores (otras computadoras):**
+```bash
+python3 main.py --nodo --id 2 --gui
+```
+
+### 4️⃣ ¡Usar!
+
+Se abre una ventana con botones:
+- **Cargar**: Subir archivos
+- **Descargar**: Bajar archivos
+- **Atributos**: Ver detalles
+- **Tabla**: Ver todos los bloques
+
+---
 
 ## 🏗️ Arquitectura del Sistema
 
@@ -23,10 +99,10 @@ SADTF es un sistema de archivos distribuido que permite almacenar y gestionar ar
 └─────────────────────────────────────────────┘
                     ↕
 ┌─────────────────────────────────────────────┐
-│      COORDINADOR (Nodo Maestro)             │
+│      COORDINADOR (Nodo 1)                   │
 │  - Tabla de bloques global                  │
-│  - Gestión de metadatos                     │
-│  - Sincronización entre nodos               │
+│  - Distribución de archivos                 │
+│  - También puede almacenar bloques          │
 └─────────────────────────────────────────────┘
                     ↕
 ┌──────────┬──────────┬──────────┬───────────┐
@@ -34,6 +110,8 @@ SADTF es un sistema de archivos distribuido que permite almacenar y gestionar ar
 │ (Ubuntu) │  (WSL)   │ (Linux)  │ (Windows) │
 │  70 MB   │  70 MB   │ 100 MB   │  80 MB    │
 └──────────┴──────────┴──────────┴───────────┘
+
+💡 El coordinador también puede almacenar bloques como cualquier otro nodo
 ```
 
 ## 📁 Estructura del Proyecto
@@ -61,167 +139,287 @@ distributed-fs/
 └── README.md               # Este archivo
 ```
 
-## 🚀 Instalación y Configuración
+## 📖 Guía Detallada de Instalación
 
-### Requisitos Previos
+### Requisitos
 
-- **Python 3.8 o superior**
-- **Tkinter** (incluido en Python en la mayoría de distribuciones)
-- **Red local** o acceso a máquinas remotas
+- **Python 3.8 o superior** (ya instalado en Ubuntu/WSL modernos)
+- **Tkinter** para la interfaz gráfica
+- **Varias computadoras en la misma red** (o puedes probar con una sola)
 
-### Verificar Python y Tkinter
+### ✅ Paso 1: Verificar Python
 
 ```bash
-# Verificar versión de Python
+# Ver versión de Python
 python3 --version
+# Debe mostrar: Python 3.8.x o superior
 
-# Verificar que tkinter está instalado
-python3 -c "import tkinter; print('Tkinter OK')"
+# Verificar tkinter
+python3 -c "import tkinter; print('✅ Tkinter funciona')"
 
-# Si tkinter no está instalado (Ubuntu/Debian):
+# Si tkinter NO funciona, instálalo:
 sudo apt-get update
 sudo apt-get install python3-tk
 ```
 
-### Instalación del Proyecto
+### 📥 Paso 2: Instalar en cada computadora
 
-#### En cada nodo (servidor Ubuntu y WSL):
+Repite estos pasos en **todas las computadoras** que quieras usar:
 
 ```bash
-# 1. Clonar el repositorio
+# 1. Ir a tu carpeta home
 cd ~
-git clone <URL_DEL_REPOSITORIO> distributed-fs
+
+# 2. Clonar el repositorio
+git clone https://github.com/Nerfe5/distributed-fs-sadtf.git distributed-fs
+
+# 3. Entrar al proyecto
 cd distributed-fs
 
-# 2. Crear carpetas necesarias (si no existen)
-mkdir -p espacioCompartido metadata logs
-
-# 3. No requiere instalación de dependencias (usa stdlib)
+# 4. Verificar estructura
+ls -la
+# Debes ver: main.py, src/, config/, etc.
 ```
 
-### Configuración de Nodos
+### ⚙️ Paso 3: Configurar IPs y nodos
 
-Edita `config/config.json` para configurar tus nodos:
+#### 3.1 Obtener las IPs de tus computadoras
+
+En **cada computadora**, ejecuta:
+
+```bash
+hostname -I
+```
+
+Anota las IPs. Por ejemplo:
+- Computadora 1 (servidor): `192.168.1.100`
+- Computadora 2 (laptop): `192.168.1.101`
+- Computadora 3 (WSL): `172.19.127.188`
+
+#### 3.2 Editar config.json
+
+En **todas las computadoras**, edita el archivo `config/config.json`:
+
+```bash
+nano config/config.json
+```
+
+Cambia las IPs a las que anotaste:
 
 ```json
 {
   "nodos": [
     {
       "id": 1,
-      "nombre": "servidor-ubuntu",
-      "ip": "192.168.1.100",  ← Cambia a la IP real de tu servidor
-      "puerto": 5001,
+      "nombre": "servidor-principal",
+      "ip": "192.168.1.100",         ← TU IP REAL AQUÍ
+      "puerto": 6001,
       "capacidad_mb": 70,
-      "es_coordinador": true   ← Un nodo debe ser coordinador
+      "es_coordinador": true          ← SOLO UNO debe ser true
     },
     {
       "id": 2,
-      "nombre": "wsl-local",
-      "ip": "localhost",       ← O la IP de tu WSL
-      "puerto": 5002,
+      "nombre": "laptop-trabajo",
+      "ip": "192.168.1.101",         ← TU IP REAL AQUÍ
+      "puerto": 6002,
       "capacidad_mb": 70,
       "es_coordinador": false
     }
-  ]
+  ],
+  "almacenamiento": {
+    "tamaño_bloque_mb": 1,
+    "tamaño_espacio_compartido_mb": 70,
+    "factor_replicacion": 1
+  },
+  "red": {
+    "timeout_segundos": 30,
+    "heartbeat_intervalo_segundos": 10
+  }
 }
 ```
 
-#### ¿Cómo obtener la IP de tu servidor Ubuntu?
+**⚠️ IMPORTANTE:**
+- **Todos los nodos deben tener el mismo `config.json`**
+- Solo **un nodo** debe tener `"es_coordinador": true`
+- Los puertos son `6001`, `6002`, `6003`, etc. (uno por nodo)
+
+#### 3.3 Copiar config.json a todas las computadoras
 
 ```bash
-# En el servidor Ubuntu:
-ip addr show | grep inet
-
-# O más simple:
-hostname -I
+# Desde la computadora donde editaste config.json, cópialo a las demás:
+scp config/config.json usuario@192.168.1.101:~/distributed-fs/config/
 ```
 
-#### ¿Cómo obtener la IP de WSL?
+O simplemente copia y pega el contenido manualmente.
 
-```bash
-# En WSL:
-ip addr show eth0 | grep inet
-```
+## ▶️ Ejecutar el Sistema
 
-### Ajustar Capacidad de Almacenamiento
+### 🎯 Opción 1: Con interfaz gráfica (GUI)
 
-En `config/config.json`, cambia `tamaño_espacio_compartido_mb`:
+Esta es la forma más común de usar el sistema.
 
-```json
-"almacenamiento": {
-  "tamaño_bloque_mb": 1,
-  "tamaño_espacio_compartido_mb": 70  ← Cambiar entre 50-100 MB
-}
-```
-
-## ▶️ Ejecución
-
-### 1. Iniciar el Coordinador (Servidor Ubuntu)
+#### En el COORDINADOR (computadora principal):
 
 ```bash
 cd ~/distributed-fs
-python3 main.py --coordinador
+python3 main.py --coordinador --gui
 ```
 
-### 2. Iniciar Nodos (WSL y otras máquinas)
+Verás:
+```
+🚀 Iniciando SADTF como COORDINADOR...
+✅ Coordinador iniciado en 192.168.1.100:6001
+📊 Capacidad: 70 MB
+🖥️  Abriendo interfaz gráfica...
+```
+
+#### En los NODOS TRABAJADORES (otras computadoras):
+
+```bash
+# En la segunda computadora:
+cd ~/distributed-fs
+python3 main.py --nodo --id 2 --gui
+
+# En la tercera computadora:
+cd ~/distributed-fs
+python3 main.py --nodo --id 3 --gui
+```
+
+Verás:
+```
+🚀 Iniciando SADTF como NODO trabajador (ID: 2)...
+✅ Nodo iniciado en 192.168.1.101:6002
+🔗 Conectado al coordinador 192.168.1.100:6001
+🖥️  Abriendo interfaz gráfica...
+```
+
+---
+
+### 🖥️ Opción 2: Modo headless (sin interfaz gráfica)
+
+Úsalo cuando el coordinador esté en un servidor sin pantalla o GUI:
 
 ```bash
 cd ~/distributed-fs
-python3 main.py --nodo --id 2
+python3 main.py --coordinador --headless
 ```
 
-### 3. Interfaz Gráfica
+Esto inicia el coordinador en modo servidor puro. Los nodos trabajadores siguen usando `--gui` para interactuar con el sistema.
 
-La GUI se abrirá automáticamente en cada nodo con las siguientes opciones:
+**Ejemplo de configuración típica:**
+- **Servidor Ubuntu** (sin monitor): `python3 main.py --coordinador --headless`
+- **Laptop Windows/WSL** (con monitor): `python3 main.py --nodo --id 2 --gui`
+- **PC de escritorio** (con monitor): `python3 main.py --nodo --id 3 --gui`
 
-- **Cargar**: Subir un archivo al sistema distribuido
-- **Atributos de archivo**: Ver detalles y distribución de bloques
-- **Tabla**: Ver tabla completa de bloques del sistema
-- **Descargar**: Bajar un archivo seleccionado
+---
 
-## 🔧 Operaciones del Sistema
+### 🎨 Interfaz Gráfica
 
-### Subir un Archivo
+Cuando uses `--gui`, verás una ventana así:
 
-1. Click en botón **"Cargar"**
-2. Seleccionar archivo del sistema
-3. El sistema:
-   - Divide el archivo en bloques de 1 MB
-   - Distribuye bloques entre nodos disponibles
-   - Crea réplica de cada bloque en otro nodo
-   - Actualiza la tabla de bloques
-   - Muestra el archivo en la lista
+```
+╔══════════════════════════════════════════╗
+║         SADTF - Nodo 2 (Activo)          ║
+╠══════════════════════════════════════════╣
+║  Archivos en el sistema:                 ║
+║                                          ║
+║  📄 documento.pdf      01/11/25  2.5 MB  ║
+║  🎬 video.mp4         15/11/25  15.0 MB  ║
+║  📊 datos.csv         20/11/25  850 KB   ║
+║                                          ║
+╠══════════════════════════════════════════╣
+║ [Cargar] [Atributos] [Tabla] [Descargar]║
+╚══════════════════════════════════════════╝
+```
 
-### Descargar un Archivo
+**Botones:**
+- 📤 **Cargar**: Subir un archivo al sistema distribuido
+- 📋 **Atributos**: Ver detalles y ubicación de bloques de un archivo
+- 📊 **Tabla**: Ver todos los bloques del sistema (paginado)
+- 📥 **Descargar**: Recuperar un archivo seleccionado
 
-1. Seleccionar archivo de la lista
-2. Click en botón **"Descargar"**
-3. Elegir ubicación de destino
-4. El sistema:
-   - Recupera bloques del nodo primario
-   - Si un nodo falla, usa la réplica
-   - Une todos los bloques
-   - Verifica integridad (hash SHA256)
-   - Guarda archivo completo
+## 🔧 Cómo Usar el Sistema
 
-### Ver Atributos
+### 📤 1. Subir un archivo
 
-1. Seleccionar archivo de la lista
-2. Click en **"Atributos de archivo"**
-3. Ventana muestra:
-   - Nombre, fecha, tamaño
-   - Lista de bloques
-   - Ubicación de cada bloque (nodo primario y réplica)
-   - Hash de verificación
+**Pasos:**
+1. En cualquier nodo con GUI, haz clic en **"Cargar"**
+2. Selecciona un archivo de tu computadora
+3. Espera a que termine la subida
+4. ✅ El archivo aparecerá en la lista
 
-### Ver Tabla de Bloques
+**Lo que hace el sistema internamente:**
+```
+1. Divide el archivo en bloques de 1 MB
+   ejemplo.mp4 (5 MB) → 5 bloques
 
-1. Click en botón **"Tabla"**
-2. Ventana muestra:
-   - Todas las entradas de la tabla
-   - Estado de cada bloque (libre/ocupado)
-   - Archivo al que pertenece
-   - Nodos donde está almacenado
+2. Distribuye los bloques entre nodos disponibles
+   bloque_1 → Nodo 2
+   bloque_2 → Nodo 1 (coordinador)
+   bloque_3 → Nodo 2
+   bloque_4 → Nodo 1
+   bloque_5 → Nodo 2
+
+3. Crea una réplica de cada bloque en otro nodo
+   bloque_1 → Nodo 2 (primario) + Nodo 1 (réplica)
+   bloque_2 → Nodo 1 (primario) + Nodo 2 (réplica)
+   ...
+
+4. Actualiza la tabla de metadatos
+```
+
+---
+
+### 📥 2. Descargar un archivo
+
+**Pasos:**
+1. Selecciona un archivo de la lista
+2. Haz clic en **"Descargar"**
+3. Elige dónde guardarlo
+4. ✅ El archivo se reconstruye y guarda
+
+**Lo que hace el sistema:**
+- Recupera todos los bloques (del nodo primario o réplica si falla)
+- Une los bloques en orden
+- Verifica integridad con hash SHA256
+- Guarda el archivo completo
+
+**Tolerancia a fallas:**
+Si un nodo está apagado, el sistema automáticamente usa las réplicas de otros nodos. ¡Tu archivo siempre está disponible!
+
+---
+
+### 📋 3. Ver atributos de un archivo
+
+**Pasos:**
+1. Selecciona un archivo
+2. Haz clic en **"Atributos"**
+3. Verás una ventana con:
+   - Nombre del archivo
+   - Tamaño total
+   - Fecha de subida
+   - Hash SHA256
+   - **Lista de bloques con su ubicación:**
+     ```
+     Bloque 1: Nodo 2 (primario) → Nodo 1 (réplica)
+     Bloque 2: Nodo 1 (primario) → Nodo 2 (réplica)
+     Bloque 3: Nodo 2 (primario) → Nodo 1 (réplica)
+     ```
+
+---
+
+### 📊 4. Ver tabla completa de bloques
+
+**Pasos:**
+1. Haz clic en **"Tabla"**
+2. Verás todos los bloques del sistema con:
+   - Nombre del archivo
+   - Número de bloque
+   - Tamaño
+   - Nodo donde está almacenado
+   - Estado (activo/eliminado)
+
+La tabla está **paginada** (10 bloques por página) para facilitar la navegación.
 
 ## 🧪 Pruebas
 
@@ -243,22 +441,145 @@ python3 tests/test_block_manager.py
 4. Intentar descargar el archivo
 5. ✅ Debe descargarse correctamente usando réplicas
 
-## 📊 Casos de Uso
+## ➕ Agregar Más Nodos al Sistema
 
-### 1. Laboratorio Educativo
-- **Escenario**: Universidad con 20-30 PCs en laboratorio
-- **Beneficio**: Aprovechar espacio no usado de todas las PCs
-- **Ejemplo**: Estudiantes comparten datasets y proyectos grandes
+¿Quieres expandir tu sistema con más computadoras? Es muy fácil:
 
-### 2. Pequeña Empresa sin Servidor
-- **Escenario**: Oficina con 5-10 computadoras
-- **Beneficio**: Almacenamiento compartido sin inversión adicional
-- **Ejemplo**: Archivos de diseño, documentos, backups
+### Paso 1: Edita config.json en TODAS las computadoras
 
-### 3. Investigación Científica
-- **Escenario**: Laboratorio con workstations
-- **Beneficio**: Tolerancia a fallas para datos críticos
-- **Ejemplo**: Datasets experimentales, logs de sensores
+Agrega el nuevo nodo a la lista:
+
+```json
+{
+  "nodos": [
+    {
+      "id": 1,
+      "ip": "192.168.1.100",
+      "puerto": 6001,
+      "capacidad_mb": 70,
+      "es_coordinador": true
+    },
+    {
+      "id": 2,
+      "ip": "192.168.1.101",
+      "puerto": 6002,
+      "capacidad_mb": 70,
+      "es_coordinador": false
+    },
+    {
+      "id": 3,                      ← NUEVO NODO
+      "nombre": "pc-oficina",
+      "ip": "192.168.1.102",       ← IP del nuevo nodo
+      "puerto": 6003,                ← Puerto único
+      "capacidad_mb": 100,
+      "es_coordinador": false
+    }
+  ]
+}
+```
+
+### Paso 2: Inicia el nuevo nodo
+
+En la nueva computadora:
+
+```bash
+cd ~/distributed-fs
+python3 main.py --nodo --id 3 --gui
+```
+
+### Paso 3: ¡Listo!
+
+El nuevo nodo se conectará automáticamente al coordinador y empezará a:
+- Recibir bloques de archivos nuevos
+- Servir bloques que tenga almacenados
+- Participar en la replicación
+
+**💡 Beneficio:** Ahora tienes **240 MB** de almacenamiento distribuido (70 + 70 + 100)
+
+---
+
+## 📊 Casos de Uso Reales
+
+### 1. 🎓 Laboratorio Universitario
+
+**Escenario:**  
+Universidad con 20 PCs en laboratorio, cada una con 50 MB libres
+
+**Implementación:**
+- 1 PC como coordinador (puede ser headless)
+- 19 PCs como nodos trabajadores
+- Total: **1,000 MB (1 GB)** de almacenamiento compartido
+
+**Uso:**
+Estudiantes comparten datasets, proyectos de programación, papers y videos educativos
+
+**Comandos:**
+```bash
+# En PC coordinador:
+python3 main.py --coordinador --headless
+
+# En cada PC del laboratorio:
+python3 main.py --nodo --id N --gui
+```
+
+---
+
+### 2. 🏢 Oficina Pequeña
+
+**Escenario:**  
+Oficina con 5 computadoras sin servidor dedicado
+
+**Implementación:**
+- Computadora del gerente = coordinador con GUI
+- 4 computadoras de empleados = nodos con GUI
+- Total: **350 MB** compartidos
+
+**Uso:**
+Guardar diseños, presentaciones, documentos compartidos, backups
+
+**Ventaja:**  
+No necesitan comprar servidor ni NAS. Usan recursos existentes.
+
+---
+
+### 3. 🔬 Laboratorio de Investigación
+
+**Escenario:**  
+Lab con 3 workstations potentes para simulaciones
+
+**Implementación:**
+- Workstation 1: coordinador (200 MB)
+- Workstation 2-3: nodos (200 MB c/u)
+- Total: **600 MB** con tolerancia a fallas
+
+**Uso:**
+Almacenar resultados de experimentos, datos de sensores, modelos de ML
+
+**Ventaja:**  
+Si una workstation falla o reinicia, los datos siguen disponibles gracias a las réplicas.
+
+---
+
+### 4. 🏠 Red Casera
+
+**Escenario:**  
+Casa con laptop, PC de escritorio y Raspberry Pi
+
+**Implementación:**
+- Raspberry Pi: coordinador headless (siempre encendido)
+- Laptop + PC: nodos con GUI (cuando están encendidos)
+
+**Uso:**  
+Compartir fotos, videos familiares, documentos entre dispositivos
+
+**Comandos:**
+```bash
+# En Raspberry Pi:
+python3 main.py --coordinador --headless
+
+# En laptop/PC:
+python3 main.py --nodo --id 2 --gui
+```
 
 ## 🛠️ Desarrollo
 

@@ -27,10 +27,10 @@ from pathlib import Path
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 
-from config_manager import get_config
-from block_manager import BlockManager
-from metadata_manager import MetadataManager, FileMetadata, BlockEntry
-from network import NetworkManager, NetworkMessage
+from src.config_manager import get_config
+from src.block_manager import BlockManager
+from src.metadata_manager import MetadataManager, FileMetadata, BlockEntry
+from src.network import NetworkManager, NetworkMessage
 
 
 class FileOperationResult:
@@ -81,7 +81,7 @@ class FileOperations:
         self.logger.setLevel(logging.INFO)
         
         # Inicializar componentes
-        self.block_manager = BlockManager(self.config.get_block_size())
+        self.block_manager = BlockManager(self.config.get_block_size_bytes())
         
         metadata_dir = self.config.get_metadata_directory()
         total_blocks = self.config.get_total_blocks()

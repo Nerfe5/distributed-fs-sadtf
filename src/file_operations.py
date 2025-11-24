@@ -308,7 +308,15 @@ class FileOperations:
                 message
             )
             
-            return response and response.type != NetworkMessage.ERROR
+            # Verificar que la respuesta sea exitosa
+            if not response:
+                return False
+            
+            if response.type == NetworkMessage.ERROR:
+                return False
+            
+            # Verificar el campo success en la respuesta
+            return response.data.get('success', False)
             
         except Exception as e:
             self.logger.error(f"Error enviando bloque {block_id} a {node_ip}:{node_port}: {e}")

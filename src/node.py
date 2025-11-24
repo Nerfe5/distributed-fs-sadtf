@@ -363,54 +363,95 @@ class Node:
     def _handle_upload_block(self, message: NetworkMessage) -> NetworkMessage:
         """
         Handler para subir un bloque.
-        
-        Nota: En esta versión simplificada, solo confirmamos.
-        La transferencia real de datos se implementará en file_operations.
+        Almacena el bloque recibido localmente.
         """
         block_id = message.data.get('block_id')
         file_name = message.data.get('file_name')
-        
-        # Por ahora solo confirmamos que estamos listos
-        response_data = {
-            'success': True,
-            'block_id': block_id,
-            'message': f'Nodo {self.node_id} listo para recibir bloque {block_id}'
-        }
+        block_data_hex = message.data.get('data')
+        block_hash = message.data.get('hash')
         
         self.logger.info(f"📥 Solicitud de subida: bloque {block_id} de {file_name}")
         
-        return NetworkMessage(
-            NetworkMessage.STATUS_RESPONSE,
-            response_data,
-            self.node_id
-        )
+        try:
+            # Convertir datos de hex a bytes
+            block_data = bytes.fromhex(block_data_hex)
+            
+            # Verificar hash
+            calculated_hash = self.block_manager._calculate_hash(block_data)
+            if calculated_hash != block_hash:
+                self.logger.error(f"❌ Hash no coincide para bloque {block_id}")
+                return NetworkMessage(
+                    NetworkMessage.ERROR,
+                    {'error': 'Hash verification failed'},
+                    self.node_id
+                )
+            
+            # Almacenar bloque
+            if self.store_block(block_id, block_data, file_name):
+                response_data = {
+                    'success': True,
+                    'block_id': block_id,
+                    'message': f'Bloque {block_id} almacenado correctamente'
+                }
+                return NetworkMessage(
+                    NetworkMessage.STATUS_RESPONSE,
+                    response_data,
+                    self.node_id
+                )
+            else:
+                return NetworkMessage(
+                    NetworkMessage.ERROR,
+                    {'error': 'Failed to store block'},
+                    self.node_id
+                )
+                
+        except Exception as e:
+            self.logger.error(f"❌ Error procesando bloque {block_id}: {e}")
+            return NetworkMessage(
+                NetworkMessage.ERROR,
+                {'error': str(e)},
+                self.node_id
+            )
     
     def _handle_download_block(self, message: NetworkMessage) -> NetworkMessage:
         """
         Handler para descargar un bloque.
-        
-        Nota: Similar a upload, la transferencia real se hará en file_operations.
+        Envía los datos del bloque solicitado.
         """
         block_id = message.data.get('block_id')
         
-        # Verificar si tenemos el bloque
-        block_filename = f"block_{block_id:06d}.bin"
-        block_path = self.blocks_dir / block_filename
-        has_block = block_path.exists()
+        self.logger.info(f"📤 Solicitud de descarga: bloque {block_id}")
         
-        response_data = {
-            'success': has_block,
-            'block_id': block_id,
-            'message': f'Bloque {block_id} {"disponible" if has_block else "no encontrado"}'
-        }
-        
-        self.logger.info(f"📤 Solicitud de descarga: bloque {block_id} - {'OK' if has_block else 'NO ENCONTRADO'}")
-        
-        return NetworkMessage(
-            NetworkMessage.STATUS_RESPONSE,
-            response_data,
-            self.node_id
-        )
+        try:
+            # Recuperar bloque
+            block_data = self.retrieve_block(block_id)
+            
+            if block_data:
+                response_data = {
+                    'success': True,
+                    'block_id': block_id,
+                    'data': block_data.hex(),  # Convertir a hex para JSON
+                    'size': len(block_data)
+                }
+                return NetworkMessage(
+                    NetworkMessage.STATUS_RESPONSE,
+                    response_data,
+                    self.node_id
+                )
+            else:
+                return NetworkMessage(
+                    NetworkMessage.ERROR,
+                    {'error': f'Bloque {block_id} no encontrado'},
+                    self.node_id
+                )
+                
+        except Exception as e:
+            self.logger.error(f"❌ Error recuperando bloque {block_id}: {e}")
+            return NetworkMessage(
+                NetworkMessage.ERROR,
+                {'error': str(e)},
+                self.node_id
+            )
     
     def _handle_delete_block(self, message: NetworkMessage) -> NetworkMessage:
         """Handler para eliminar un bloque."""

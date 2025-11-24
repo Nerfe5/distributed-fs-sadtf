@@ -294,7 +294,7 @@ class FileOperations:
                     'hash': block_hash,
                     'size': len(block_data)
                 },
-                self.node_id
+                self.coordinator_id
             )
             
             response = self.network.send_message_to_node(
@@ -513,7 +513,7 @@ class FileOperations:
             message = NetworkMessage(
                 NetworkMessage.DOWNLOAD_BLOCK,
                 {'block_id': block_id},
-                self.node_id
+                self.coordinator_id
             )
             
             response = self.network.send_message_to_node(
@@ -651,7 +651,7 @@ class FileOperations:
             message = NetworkMessage(
                 NetworkMessage.DELETE_BLOCK,
                 {'block_id': block_id},
-                self.node_id
+                self.coordinator_id
             )
             
             response = self.network.send_message_to_node(

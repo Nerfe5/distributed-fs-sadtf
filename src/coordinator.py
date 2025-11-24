@@ -24,6 +24,7 @@ from pathlib import Path
 from src.config_manager import get_config
 from src.metadata_manager import MetadataManager
 from src.network import NetworkManager, NetworkMessage
+from src.block_manager import BlockManager
 
 
 class NodeStatus:
@@ -68,10 +69,24 @@ class Coordinator:
         
         self.node_ip = node_config['ip']
         self.node_port = node_config['puerto']
+        self.capacidad_mb = node_config['capacidad_mb']
         
         # Configurar logging
         self.logger = logging.getLogger(f"Coordinator-Node{node_id}")
         self.logger.setLevel(logging.INFO)
+        
+        # Directorio local para bloques (el coordinador también almacena)
+        self.blocks_dir = self.config.get_blocks_directory()
+        self.blocks_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Gestor de bloques
+        self.block_manager = BlockManager(
+            block_size_bytes=self.config.get_block_size_bytes()
+        )
+        
+        # Estado de almacenamiento local
+        self.bloques_almacenados = 0
+        self.bytes_usados = 0
         
         # Inicializar gestor de metadatos
         metadata_dir = self.config.get_metadata_directory()
@@ -133,7 +148,20 @@ class Coordinator:
             NetworkMessage.GET_STATUS,
             self._handle_get_status
         )
-        # Más handlers se agregarán según sea necesario
+        
+        # Handlers de bloques (el coordinador también almacena bloques)
+        self.network.register_handler(
+            NetworkMessage.UPLOAD_BLOCK,
+            self._handle_upload_block
+        )
+        self.network.register_handler(
+            NetworkMessage.DOWNLOAD_BLOCK,
+            self._handle_download_block
+        )
+        self.network.register_handler(
+            NetworkMessage.DELETE_BLOCK,
+            self._handle_delete_block
+        )
     
     # ========================================================================
     # Control del coordinador
@@ -347,6 +375,186 @@ class Coordinator:
             status,
             self.node_id
         )
+    
+    def _handle_upload_block(self, message: NetworkMessage) -> NetworkMessage:
+        """
+        Handler para subir un bloque.
+        Almacena el bloque recibido localmente.
+        """
+        block_id = message.data.get('block_id')
+        file_name = message.data.get('file_name')
+        block_data_hex = message.data.get('data')
+        block_hash = message.data.get('hash')
+        
+        self.logger.info(f"📥 Solicitud de subida: bloque {block_id} de {file_name}")
+        
+        try:
+            # Convertir datos de hex a bytes
+            block_data = bytes.fromhex(block_data_hex)
+            
+            # Verificar hash
+            calculated_hash = self.block_manager._calculate_hash(block_data)
+            if calculated_hash != block_hash:
+                self.logger.error(f"❌ Hash no coincide para bloque {block_id}")
+                return NetworkMessage(
+                    NetworkMessage.ERROR,
+                    {'error': 'Hash verification failed'},
+                    self.node_id
+                )
+            
+            # Almacenar bloque
+            if self._store_block(block_id, block_data, file_name):
+                response_data = {
+                    'success': True,
+                    'block_id': block_id,
+                    'message': f'Bloque {block_id} almacenado correctamente'
+                }
+                return NetworkMessage(
+                    NetworkMessage.STATUS_RESPONSE,
+                    response_data,
+                    self.node_id
+                )
+            else:
+                return NetworkMessage(
+                    NetworkMessage.ERROR,
+                    {'error': 'Failed to store block'},
+                    self.node_id
+                )
+                
+        except Exception as e:
+            self.logger.error(f"❌ Error procesando bloque {block_id}: {e}")
+            return NetworkMessage(
+                NetworkMessage.ERROR,
+                {'error': str(e)},
+                self.node_id
+            )
+    
+    def _handle_download_block(self, message: NetworkMessage) -> NetworkMessage:
+        """
+        Handler para descargar un bloque.
+        Envía los datos del bloque solicitado.
+        """
+        block_id = message.data.get('block_id')
+        
+        self.logger.info(f"📤 Solicitud de descarga: bloque {block_id}")
+        
+        try:
+            # Recuperar bloque
+            block_data = self._retrieve_block(block_id)
+            
+            if block_data:
+                response_data = {
+                    'success': True,
+                    'block_id': block_id,
+                    'data': block_data.hex(),
+                    'size': len(block_data)
+                }
+                return NetworkMessage(
+                    NetworkMessage.STATUS_RESPONSE,
+                    response_data,
+                    self.node_id
+                )
+            else:
+                return NetworkMessage(
+                    NetworkMessage.ERROR,
+                    {'error': f'Bloque {block_id} no encontrado'},
+                    self.node_id
+                )
+                
+        except Exception as e:
+            self.logger.error(f"❌ Error recuperando bloque {block_id}: {e}")
+            return NetworkMessage(
+                NetworkMessage.ERROR,
+                {'error': str(e)},
+                self.node_id
+            )
+    
+    def _handle_delete_block(self, message: NetworkMessage) -> NetworkMessage:
+        """Handler para eliminar un bloque."""
+        block_id = message.data.get('block_id')
+        
+        success = self._delete_block(block_id)
+        
+        response_data = {
+            'success': success,
+            'block_id': block_id,
+            'message': f'Bloque {block_id} {"eliminado" if success else "no se pudo eliminar"}'
+        }
+        
+        return NetworkMessage(
+            NetworkMessage.STATUS_RESPONSE,
+            response_data,
+            self.node_id
+        )
+    
+    def _store_block(self, block_id: int, block_data: bytes, file_name: str) -> bool:
+        """Almacena un bloque localmente."""
+        try:
+            if not self._has_space_for_block(len(block_data)):
+                self.logger.error("❌ No hay espacio suficiente")
+                return False
+            
+            block_filename = f"block_{block_id:06d}.bin"
+            block_path = self.blocks_dir / block_filename
+            
+            self.block_manager.write_block(str(block_path), block_data)
+            
+            self.bloques_almacenados += 1
+            self.bytes_usados += len(block_data)
+            
+            self.logger.info(f"✅ Bloque {block_id} almacenado ({len(block_data)} bytes)")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error almacenando bloque {block_id}: {e}")
+            return False
+    
+    def _retrieve_block(self, block_id: int):
+        """Recupera un bloque local."""
+        try:
+            block_filename = f"block_{block_id:06d}.bin"
+            block_path = self.blocks_dir / block_filename
+            
+            if not block_path.exists():
+                self.logger.warning(f"⚠️ Bloque {block_id} no encontrado")
+                return None
+            
+            block_data = self.block_manager.read_block(str(block_path))
+            self.logger.info(f"✅ Bloque {block_id} recuperado ({len(block_data)} bytes)")
+            return block_data
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error recuperando bloque {block_id}: {e}")
+            return None
+    
+    def _delete_block(self, block_id: int) -> bool:
+        """Elimina un bloque local."""
+        try:
+            block_filename = f"block_{block_id:06d}.bin"
+            block_path = self.blocks_dir / block_filename
+            
+            if not block_path.exists():
+                self.logger.warning(f"⚠️ Bloque {block_id} no existe")
+                return False
+            
+            block_size = block_path.stat().st_size
+            
+            if self.block_manager.delete_block(str(block_path)):
+                self.bloques_almacenados -= 1
+                self.bytes_usados -= block_size
+                self.logger.info(f"✅ Bloque {block_id} eliminado")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"❌ Error eliminando bloque {block_id}: {e}")
+            return False
+    
+    def _has_space_for_block(self, block_size: int) -> bool:
+        """Verifica si hay espacio para un bloque."""
+        capacity_bytes = self.capacidad_mb * 1024 * 1024
+        return (self.bytes_usados + block_size) <= capacity_bytes
     
     # ========================================================================
     # Utilidades y visualización

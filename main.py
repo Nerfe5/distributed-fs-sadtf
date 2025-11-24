@@ -115,7 +115,7 @@ def start_coordinador(headless=False):
             def get_active_nodes():
                 return [n.node_id for n in coordinator.nodes.values() if n.activo]
             
-            gui = SADTFGUI(node_id, get_active_nodes)
+            gui = SADTFGUI(node_id, get_active_nodes, is_coordinator=True)
             
             # Ejecutar GUI (blocking)
             gui.run()
@@ -163,13 +163,13 @@ def start_nodo(node_id: int):
         # Iniciar GUI
         print("\n🖥️  Iniciando interfaz gráfica...\n")
         
-        # Callback para obtener nodos activos (desde el nodo)
-        def get_active_nodes():
-            # En nodos trabajadores, solo el coordinador conoce todos los nodos
-            # Por ahora retornar lista vacía, la GUI consultará al coordinador
-            return []
-        
-        gui = SADTFGUI(node_id, get_active_nodes)
+            # Callback para obtener nodos activos (desde el nodo)
+            def get_active_nodes():
+                # En nodos trabajadores, solo el coordinador conoce todos los nodos
+                # Por ahora retornar lista vacía, la GUI consultará al coordinador
+                return []
+            
+            gui = SADTFGUI(node_id, get_active_nodes, is_coordinator=False)
         
         # Manejar señales para cierre limpio
         def signal_handler(sig, frame):
@@ -206,7 +206,7 @@ def start_gui_only(node_id: int = 1):
         def get_active_nodes():
             return [1]  # Solo el nodo actual
         
-        gui = SADTFGUI(node_id, get_active_nodes)
+        gui = SADTFGUI(node_id, get_active_nodes, is_coordinator=True)
         gui.run()
         return True
     except Exception as e:

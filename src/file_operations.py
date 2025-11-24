@@ -66,31 +66,35 @@ class FileOperations:
         Inicializa el gestor de operaciones de archivos.
         
         Args:
-            coordinator_node_id: ID del nodo coordinador
+            coordinator_node_id: ID del nodo coordinador (puede ser local o remoto)
         """
-        self.node_id = coordinator_node_id
+        self.coordinator_id = coordinator_node_id
         self.config = get_config()
         
-        # Verificar que este nodo sea coordinador
-        node_config = self.config.get_node_by_id(coordinator_node_id)
-        if not node_config or not node_config.get('es_coordinador', False):
-            raise ValueError(f"El nodo {coordinator_node_id} no es coordinador")
+        # Obtener configuración del coordinador
+        coordinator_config = self.config.get_coordinator_node()
+        if not coordinator_config:
+            raise ValueError("No hay ningún nodo configurado como coordinador")
+        
+        self.coordinator_id = coordinator_config['id']
         
         # Configurar logging
-        self.logger = logging.getLogger(f"FileOperations-Node{coordinator_node_id}")
+        self.logger = logging.getLogger(f"FileOperations-Coord{self.coordinator_id}")
         self.logger.setLevel(logging.INFO)
         
         # Inicializar componentes
         self.block_manager = BlockManager(self.config.get_block_size_bytes())
         
+        # Metadata: todos los nodos acceden a los metadatos del coordinador
         metadata_dir = self.config.get_metadata_directory()
         total_blocks = self.config.get_total_blocks()
         self.metadata = MetadataManager(str(metadata_dir), total_blocks)
         
+        # Network manager para comunicarse con otros nodos
         self.network = NetworkManager(
-            node_id=coordinator_node_id,
-            host=node_config['ip'],
-            port=node_config['puerto'],
+            node_id=self.coordinator_id,
+            host=coordinator_config['ip'],
+            port=coordinator_config['puerto'],
             timeout=self.config.get_timeout_seconds()
         )
         

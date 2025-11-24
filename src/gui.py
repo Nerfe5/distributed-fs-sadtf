@@ -46,14 +46,9 @@ class SADTFGUI:
         self.get_active_nodes = active_nodes_callback
         self.is_coordinator = is_coordinator
         
-        # Inicializar FileOperations solo si es coordinador
-        self.file_ops = None
-        if is_coordinator:
-            self.file_ops = FileOperations(coordinator_node_id)
-        else:
-            # En nodos trabajadores, las operaciones se hacen vía red al coordinador
-            # Por ahora, la GUI es de solo lectura
-            print("⚠️  Nodo trabajador: GUI en modo solo lectura")
+        # Inicializar FileOperations
+        # Todos los nodos pueden usar FileOperations para operar con el coordinador
+        self.file_ops = FileOperations(coordinator_node_id)
         
         # Crear ventana principal
         self.root = tk.Tk()
@@ -211,10 +206,6 @@ class SADTFGUI:
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        # Solo disponible en coordinador
-        if not self.file_ops:
-            return
-        
         # Obtener lista de archivos
         result = self.file_ops.list_files()
         
@@ -263,15 +254,6 @@ class SADTFGUI:
     
     def _btn_cargar_clicked(self):
         """Handler para botón Cargar."""
-        # Solo disponible en coordinador
-        if not self.file_ops:
-            messagebox.showwarning(
-                "No disponible",
-                "Esta operación solo está disponible en el coordinador.\n"
-                "Usa la GUI del coordinador para cargar archivos."
-            )
-            return
-        
         # Abrir diálogo de selección de archivo
         file_path = filedialog.askopenfilename(
             title="Seleccionar archivo para cargar",
@@ -312,14 +294,6 @@ class SADTFGUI:
     
     def _btn_descargar_clicked(self):
         """Handler para botón Descargar."""
-        # Solo disponible en coordinador
-        if not self.file_ops:
-            messagebox.showwarning(
-                "No disponible",
-                "Esta operación solo está disponible en el coordinador."
-            )
-            return
-        
         file_name = self._get_selected_file()
         
         if not file_name:
@@ -370,14 +344,6 @@ class SADTFGUI:
     
     def _btn_atributos_clicked(self):
         """Handler para botón Atributos de archivo."""
-        # Solo disponible en coordinador
-        if not self.file_ops:
-            messagebox.showwarning(
-                "No disponible",
-                "Esta operación solo está disponible en el coordinador."
-            )
-            return
-        
         file_name = self._get_selected_file()
         
         if not file_name:
@@ -399,14 +365,6 @@ class SADTFGUI:
     
     def _btn_tabla_clicked(self):
         """Handler para botón Tabla."""
-        # Solo disponible en coordinador
-        if not self.file_ops:
-            messagebox.showwarning(
-                "No disponible",
-                "Esta operación solo está disponible en el coordinador."
-            )
-            return
-        
         # Obtener estadísticas y tabla de bloques
         stats = self.file_ops.get_system_statistics()
         

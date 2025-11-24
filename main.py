@@ -165,9 +165,9 @@ def start_nodo(node_id: int):
         
         # Callback para obtener nodos activos (desde el nodo)
         def get_active_nodes():
-            # En nodos trabajadores, solo el coordinador conoce todos los nodos
-            # Por ahora retornar lista vacía, la GUI consultará al coordinador
-            return []
+            # En nodos trabajadores, retornar todos los nodos de config
+            # El coordinador validará cuáles están realmente activos
+            return [n['id'] for n in config.get_nodes() if not n.get('es_coordinador', False)]
         
         gui = SADTFGUI(node_id, get_active_nodes, is_coordinator=False)
         

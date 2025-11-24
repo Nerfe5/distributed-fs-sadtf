@@ -195,6 +195,7 @@ class FileOperations:
                 replica_config = self.config.get_node_by_id(replica_node)
                 
                 # Enviar a nodo primario
+                print(f"   Enviando a nodo primario {primary_node} ({primary_config['ip']}:{primary_config['puerto']})...")
                 success_primary = self._send_block_to_node(
                     block_id,
                     block_data,
@@ -203,8 +204,10 @@ class FileOperations:
                     primary_config['ip'],
                     primary_config['puerto']
                 )
+                print(f"   Resultado primario: {'✅ OK' if success_primary else '❌ FALLO'}")
                 
                 # Enviar a nodo réplica
+                print(f"   Enviando a nodo réplica {replica_node} ({replica_config['ip']}:{replica_config['puerto']})...")
                 success_replica = self._send_block_to_node(
                     block_id,
                     block_data,
@@ -213,9 +216,11 @@ class FileOperations:
                     replica_config['ip'],
                     replica_config['puerto']
                 )
+                print(f"   Resultado réplica: {'✅ OK' if success_replica else '❌ FALLO'}")
                 
                 if not success_primary or not success_replica:
                     # Rollback: eliminar bloques ya enviados
+                    print(f"\n❌ Fallo en envío: primario={success_primary}, réplica={success_replica}")
                     self._rollback_upload(assignments[:i], file_name)
                     return FileOperationResult(
                         False,

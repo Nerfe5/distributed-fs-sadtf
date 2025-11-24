@@ -163,13 +163,13 @@ def start_nodo(node_id: int):
         # Iniciar GUI
         print("\n🖥️  Iniciando interfaz gráfica...\n")
         
-            # Callback para obtener nodos activos (desde el nodo)
-            def get_active_nodes():
-                # En nodos trabajadores, solo el coordinador conoce todos los nodos
-                # Por ahora retornar lista vacía, la GUI consultará al coordinador
-                return []
-            
-            gui = SADTFGUI(node_id, get_active_nodes, is_coordinator=False)
+        # Callback para obtener nodos activos (desde el nodo)
+        def get_active_nodes():
+            # En nodos trabajadores, solo el coordinador conoce todos los nodos
+            # Por ahora retornar lista vacía, la GUI consultará al coordinador
+            return []
+        
+        gui = SADTFGUI(node_id, get_active_nodes, is_coordinator=False)
         
         # Manejar señales para cierre limpio
         def signal_handler(sig, frame):

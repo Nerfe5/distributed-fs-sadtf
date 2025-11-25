@@ -152,6 +152,36 @@ class FileOperations:
                 f"Se necesitan al menos 2 nodos activos. Disponibles: {len(active_nodes)}"
             )
         
+        # VALIDACIÓN DE CAPACIDAD: Verificar si hay espacio suficiente
+        file_size = file_path.stat().st_size
+        file_size_mb = file_size / (1024 * 1024)
+        num_blocks_needed = (file_size + self.config.get_block_size_bytes() - 1) // self.config.get_block_size_bytes()
+        
+        # Obtener bloques libres actuales
+        try:
+            free_blocks_count = len([b for b in self.metadata.block_table.values() if b.estado == 'libre'])
+        except:
+            free_blocks_count = 0
+        
+        # Calcular capacidad total y usada
+        total_capacity_mb = self.metadata.total_blocks
+        used_capacity_mb = self.metadata.total_blocks - free_blocks_count
+        free_capacity_mb = free_blocks_count
+        
+        if num_blocks_needed > free_blocks_count:
+            return FileOperationResult(
+                False,
+                f"⚠️ CAPACIDAD INSUFICIENTE\n\n"
+                f"Archivo: {file_name}\n"
+                f"Tamaño: {file_size_mb:.2f} MB ({num_blocks_needed} bloques)\n\n"
+                f"Capacidad del sistema:\n"
+                f"  • Total: {total_capacity_mb} MB\n"
+                f"  • Usada: {used_capacity_mb} MB\n"
+                f"  • Libre: {free_capacity_mb} MB\n\n"
+                f"Se necesitan {num_blocks_needed} bloques pero solo hay {free_blocks_count} disponibles.\n"
+                f"Por favor, libera espacio eliminando archivos o agrega más nodos al sistema."
+            )
+        
         try:
             # Paso 1: Dividir archivo en bloques (en memoria)
             print("📦 Dividiendo archivo en bloques...")

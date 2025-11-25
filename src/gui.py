@@ -484,21 +484,21 @@ Bloque {i+1} (ID: {block_info['block_id']}):
         columns = ("id", "estado", "archivo", "parte", "nodo1", "nodo2")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings")
         
-        # Configurar encabezados
-        tree.heading("id", text="ID")
+        # Configurar encabezados con mejor descripción
+        tree.heading("id", text="Bloque ID")
         tree.heading("estado", text="Estado")
         tree.heading("archivo", text="Archivo")
         tree.heading("parte", text="Parte")
-        tree.heading("nodo1", text="Nodo 1")
-        tree.heading("nodo2", text="Nodo 2")
+        tree.heading("nodo1", text="Primario (Nodo)")
+        tree.heading("nodo2", text="Réplica (Nodo)")
         
         # Configurar columnas
-        tree.column("id", width=60, anchor="center")
+        tree.column("id", width=80, anchor="center")
         tree.column("estado", width=100, anchor="center")
-        tree.column("archivo", width=300, anchor="w")
+        tree.column("archivo", width=250, anchor="w")
         tree.column("parte", width=80, anchor="center")
-        tree.column("nodo1", width=80, anchor="center")
-        tree.column("nodo2", width=80, anchor="center")
+        tree.column("nodo1", width=120, anchor="center")
+        tree.column("nodo2", width=120, anchor="center")
         
         # Scrollbar
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
@@ -517,8 +517,28 @@ Bloque {i+1} (ID: {block_info['block_id']}):
             
             archivo = entry.archivo if entry.archivo else "-"
             parte = str(entry.parte) if entry.parte is not None else "-"
-            nodo1 = str(entry.nodo_primario) if entry.nodo_primario is not None else "-"
-            nodo2 = str(entry.nodo_replica) if entry.nodo_replica is not None else "-"
+            
+            # Mostrar partición del nodo también
+            if entry.nodo_primario is not None:
+                # Calcular la partición (bloque % capacidad_nodo)
+                nodo_config = self.file_ops.config.get_node_by_id(entry.nodo_primario)
+                if nodo_config:
+                    particion_primaria = block_id % nodo_config['capacidad_mb']
+                    nodo1 = f"{entry.nodo_primario} [pos:{particion_primaria}]"
+                else:
+                    nodo1 = str(entry.nodo_primario)
+            else:
+                nodo1 = "-"
+            
+            if entry.nodo_replica is not None:
+                nodo_config = self.file_ops.config.get_node_by_id(entry.nodo_replica)
+                if nodo_config:
+                    particion_replica = block_id % nodo_config['capacidad_mb']
+                    nodo2 = f"{entry.nodo_replica} [pos:{particion_replica}]"
+                else:
+                    nodo2 = str(entry.nodo_replica)
+            else:
+                nodo2 = "-"
             
             tree.insert("", "end", values=(
                 block_id,

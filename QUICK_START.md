@@ -534,9 +534,25 @@ Para producción, usa sistemas maduros como:
 
 ### ¿Funciona en Windows?
 
-**Respuesta:** Sí, pero es más fácil usar WSL (Windows Subsystem for Linux).
+**Respuesta:** ¡Sí! Funciona en Windows nativo y WSL.
 
-**Instalación en WSL:**
+**Opción 1: Windows Nativo (Recomendado si no tienes WSL)**
+
+1. Instala Python desde [python.org](https://www.python.org/downloads/)
+2. Marca "Add Python to PATH" durante instalación
+3. Verifica:
+   ```powershell
+   python --version
+   python -c "import tkinter; print('OK')"
+   ```
+4. Clona y ejecuta:
+   ```powershell
+   git clone https://github.com/Nerfe5/distributed-fs-sadtf.git
+   cd distributed-fs-sadtf
+   python main.py --coordinador --gui
+   ```
+
+**Opción 2: WSL (si ya lo tienes instalado)**
 ```bash
 # En PowerShell como administrador:
 wsl --install
@@ -545,6 +561,10 @@ wsl --install
 sudo apt-get update
 sudo apt-get install python3 python3-tk git
 ```
+
+**💡 Diferencias:**
+- Windows nativo: usa `python` (no `python3`)
+- WSL: usa `python3`
 
 ---
 
@@ -599,3 +619,28 @@ Ahora tienes toda la información necesaria para:
 - Resolver problemas comunes
 
 **¿Siguiente paso?** ¡Clona el repositorio y empieza a usarlo!
+
+---
+
+## 🆕 Novedades (v1.0.1+)
+
+### 📊 Visualización de Particiones
+
+La tabla de bloques ahora muestra la posición exacta:
+```
+Bloque 0: Nodo 1 [pos:0] (primario) → Nodo 2 [pos:0] (réplica)
+Bloque 5: Nodo 2 [pos:5] (primario) → Nodo 1 [pos:5] (réplica)
+```
+
+Esto te ayuda a entender cómo se distribuyen los bloques en el `espacioCompartido/` de cada nodo.
+
+### ⚠️ Validación de Capacidad
+
+Ahora el sistema valida ANTES de intentar subir:
+- ✅ Si el archivo cabe → Se sube normalmente
+- ❌ Si el archivo NO cabe → Mensaje detallado con estadísticas:
+  - Tamaño del archivo y bloques necesarios
+  - Capacidad total, usada y libre
+  - Sugerencias: eliminar archivos o agregar nodos
+
+Esto evita subidas fallidas y te da información clara sobre el estado del sistema.

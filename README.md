@@ -23,6 +23,9 @@ SADTF es un sistema que te permite **convertir varias computadoras en un solo si
 ✅ **Distribución automática**: Divide archivos en bloques de 1 MB  
 ✅ **Réplicas automáticas**: Cada bloque se guarda en 2 lugares diferentes  
 ✅ **Modo GUI o headless**: Con o sin interfaz gráfica  
+✅ **Visualización de particiones**: Ver ubicación exacta de cada bloque  
+✅ **Validación de capacidad**: Aviso cuando no hay espacio suficiente  
+✅ **Multiplataforma**: Linux, Windows y macOS  
 ✅ **Sin dependencias**: Solo Python 3.8+ y tkinter  
 ✅ **100% Python**: Código limpio y educativo
 
@@ -83,10 +86,18 @@ python3 main.py --nodo --id 2 --gui
 ### 4️⃣ ¡Usar!
 
 Se abre una ventana con botones:
-- **Cargar**: Subir archivos
+- **Cargar**: Subir archivos (con validación de capacidad automática)
 - **Descargar**: Bajar archivos
-- **Atributos**: Ver detalles
-- **Tabla**: Ver todos los bloques
+- **Atributos**: Ver detalles y distribución de bloques
+- **Tabla**: Ver todos los bloques con su partición en cada nodo
+
+### 🪟 **En Windows Nativo**
+
+```powershell
+# Usar 'python' en vez de 'python3':
+python main.py --coordinador --gui
+python main.py --nodo --id 2 --gui
+```
 
 ---
 
@@ -251,6 +262,55 @@ scp config/config.json usuario@192.168.1.101:~/distributed-fs/config/
 ```
 
 O simplemente copia y pega el contenido manualmente.
+
+---
+
+### 🐻 Instalación en Windows Nativo
+
+El sistema también funciona perfectamente en Windows sin necesidad de WSL:
+
+#### 1. Instalar Python
+
+1. Descarga Python 3.8+ desde [python.org](https://www.python.org/downloads/)
+2. Durante la instalación, marca **"Add Python to PATH"**
+3. Verifica:
+   ```powershell
+   python --version
+   python -c "import tkinter; print('OK')"
+   ```
+
+#### 2. Clonar el repositorio
+
+```powershell
+# Usando Git for Windows:
+cd C:\Users\TuUsuario
+git clone https://github.com/Nerfe5/distributed-fs-sadtf.git distributed-fs
+cd distributed-fs
+```
+
+#### 3. Configurar IPs
+
+En Windows, obtén tu IP con:
+```powershell
+ipconfig | findstr IPv4
+```
+
+Edita `config\config.json` con Notepad:
+```powershell
+notepad config\config.json
+```
+
+#### 4. Ejecutar
+
+```powershell
+# Coordinador:
+python main.py --coordinador --gui
+
+# Nodo trabajador:
+python main.py --nodo --id 2 --gui
+```
+
+**Nota:** En Windows usa `python` en lugar de `python3`.
 
 ## ▶️ Ejecutar el Sistema
 
@@ -420,6 +480,57 @@ Si un nodo está apagado, el sistema automáticamente usa las réplicas de otros
    - Estado (activo/eliminado)
 
 La tabla está **paginada** (10 bloques por página) para facilitar la navegación.
+
+---
+
+## 🆕 Nuevas Funcionalidades (v1.0.1+)
+
+### 1️⃣ Visualización de Particiones en Tabla de Bloques
+
+Ahora la tabla de bloques muestra la **posición exacta** de cada bloque en el nodo:
+
+```
+┌───────────┬─────────┬──────────────┬───────┬──────────────────┬────────────────┐
+│ Bloque ID │ Estado  │ Archivo       │ Parte │ Primario (Nodo)   │ Réplica (Nodo) │
+├───────────┼─────────┼──────────────┼───────┼──────────────────┼────────────────┤
+│     0     │ ocupado │ package.json   │   0   │ 1 [pos:0]          │ 2 [pos:0]      │
+│     1     │ ocupado │ archivo.pdf    │   1   │ 2 [pos:1]          │ 1 [pos:1]      │
+│     5     │ libre   │ -              │   -   │ -                  │ -              │
+└───────────┴─────────┴──────────────┴───────┴──────────────────┴────────────────┘
+```
+
+**Ejemplo:**
+- `1 [pos:0]` = Bloque almacenado en Nodo 1, posición 0 de su `espacioCompartido/`
+- `2 [pos:15]` = Bloque almacenado en Nodo 2, posición 15
+
+Esto te permite ver exactamente dónde está cada bloque en la partición del nodo.
+
+---
+
+### 2️⃣ Validación de Capacidad Insuficiente
+
+Antes de intentar subir un archivo, el sistema verifica si hay espacio suficiente:
+
+```
+⚠️ CAPACIDAD INSUFICIENTE
+
+Archivo: video_grande.mp4
+Tamaño: 150.00 MB (150 bloques)
+
+Capacidad del sistema:
+  • Total: 140 MB
+  • Usada: 15 MB
+  • Libre: 125 MB
+
+Se necesitan 150 bloques pero solo hay 125 disponibles.
+Por favor, libera espacio eliminando archivos o agrega más nodos al sistema.
+```
+
+**Beneficios:**
+- ✅ Evita intentos fallidos
+- ✅ Mensaje claro y detallado
+- ✅ Sugiere soluciones (eliminar archivos o agregar nodos)
+- ✅ Muestra estadísticas del sistema en tiempo real
 
 ## 🧪 Pruebas
 
